@@ -52,4 +52,8 @@ RUN set -eux; \
 	make; \
 	strip -s trojan
 
+RUN set -eux; \
+	\
+	apk del .build-deps;
+
 WORKDIR /usr/src/trojan/build
