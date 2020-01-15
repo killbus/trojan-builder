@@ -1,0 +1,49 @@
+FROM arm64v8/debian:buster-slim AS builder
+
+WORKDIR /usr/src
+
+RUN set -eux; \
+	\
+	sed -i 's/deb.debian.org/mirrors.tuna.tsinghua.edu.cn/g' /etc/apt/sources.list; \
+	sed -i 's/security.debian.org/mirrors.tuna.tsinghua.edu.cn/g' /etc/apt/sources.list; \
+	apt-get update; \
+	DEBIAN_FRONTEND=noninteractive apt-get -y dist-upgrade; \
+	DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+		build-essential \
+		git \
+		ca-certificates \
+		cmake \
+		libboost-system-dev \
+		libboost-program-options-dev \
+		libssl-dev \
+	; \
+	rm -rf /var/lib/apt/lists/*;
+
+RUN set -eux; \
+	\
+	git clone https://github.com/trojan-gfw/trojan trojan; \
+	cd trojan; \
+	echo 'target_link_libraries(trojan dl)' >> CMakeLists.txt; \
+    echo 'target_link_libraries(trojan -static-libgcc -static-libstdc++)' >> CMakeLists.txt; \
+	mkdir build; \
+	cd build/; \
+	CMAKE_OPTIONS=' \
+		-DENABLE_MYSQL=OFF \
+		-DENABLE_NAT=ON \
+		-DENABLE_REUSE_PORT=ON \
+		-DENABLE_SSL_KEYLOG=ON \
+		-DENABLE_TLS13_CIPHERSUITES=ON \
+		-DFORCE_TCP_FASTOPEN=OFF \
+		-DSYSTEMD_SERVICE=OFF \
+		-DOPENSSL_USE_STATIC_LIBS=TRUE \
+		#-DOPENSSL_INCLUDE_DIR=/usr/include/openssl \
+		#-DOPENSSL_SSL_LIBRARY=/usr/lib/libssl.so \
+		#-DOPENSSL_CRYPTO_LIBRARY=/usr/lib/libcrypto.so \
+		-DBoost_USE_STATIC_LIBS=ON \
+		-DBoost_DEBUG=ON \
+	'; \
+	cmake $CMAKE_OPTIONS .. ; \
+	make; \
+	strip -s trojan
+
+WORKDIR /usr/src/trojan/build
