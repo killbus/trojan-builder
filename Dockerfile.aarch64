@@ -12,13 +12,12 @@ RUN set -eux; \
 	apk --no-cache --no-progress upgrade; \
 	buildDeps=' \
 		build-base \
-		wget \
 		git \
 		clang \
 		cmake \
 		openssl-dev \
 		boost-dev \
-        boost-static \
+		boost-static \
 	'; \
     # apk add --no-cache linux-headers
 	apk add --no-cache --virtual .build-deps \
